@@ -15,6 +15,8 @@ PATTERN_CHANNEL = re.compile(r"\\\"channelId\\\":\\\"(.{24})\\\"")
 
 PATTERN_M_CHANNEL = re.compile(r"\"channelId\":\"(.{24})\"")
 
+PATTERN_M2_CHANNEL = re.compile(r'\\x22channelId\\x22:\\x22(.{24})\\x22')
+
 YT_VIDEO_ID_LENGTH = 11
 
 CLIENT_VERSION = ''.join(("2.", (datetime.datetime.today() - datetime.timedelta(days=1)).strftime("%Y%m%d"), ".01.00"))
@@ -112,9 +114,11 @@ def get_channelid(client, video_id):
 
 
 def get_channelid_2nd(client, video_id):
-    resp = client.get("https://m.youtube.com/watch?v={}".format(quote(video_id)), headers=config.m_headers)  
-    
-    match = re.search(PATTERN_M_CHANNEL, resp.text)
+    resp = client.get("https://m.youtube.com/watch?v={}".format(quote(video_id)), headers=config.m_headers)
+    for pattern in [PATTERN_M_CHANNEL, PATTERN_M2_CHANNEL]:
+        match = re.search(pattern, resp.text)
+        if match is not None:
+            break
     if match is None:
         raise InvalidVideoIdException(f"Cannot find channel id for video id:{video_id}. This video id seems to be invalid.")
     try:
@@ -141,8 +145,11 @@ async def get_channelid_async(client, video_id):
     return ret
 
 async def get_channelid_async_2nd(client, video_id):
-    resp = await client.get("https://m.youtube.com/watch?v={}".format(quote(video_id)), headers=config.m_headers)  
-    match = re.search(PATTERN_M_CHANNEL, resp.text)
+    resp = await client.get("https://m.youtube.com/watch?v={}".format(quote(video_id)), headers=config.m_headers)
+    for pattern in [PATTERN_M_CHANNEL, PATTERN_M2_CHANNEL]:
+        match = re.search(pattern, resp.text)
+        if match is not None:
+            break
     if match is None:
         raise InvalidVideoIdException(f"Cannot find channel id for video id:{video_id}. This video id seems to be invalid.")
     try:
